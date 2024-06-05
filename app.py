@@ -25,6 +25,8 @@ stop_words = set(stopwords.words('english'))
 from transformers import TFBertModel, PretrainedConfig
 
 from transformers import TFBertModel
+from langdetect import detect
+from googletrans import Translator
 
 # Đường dẫn đến thư mục lưu cache
 cache_dir = './my_model_cache/models--bert-base-uncased/snapshots/86b5e0934494bd15c9632b12f734a8a67f723594'
@@ -63,7 +65,7 @@ vite_bilstm_path = os.path.join(models_folder, 'model','vite_bilstm.h5')
 vite_bilstm_model = load_model(vite_bilstm_path, compile=False)
 
 vite_hibert_path = os.path.join(models_folder, 'model','vite_hibert.h5')
-vite_hibert_model = tf.keras.models.load_model(vite_hibert_path, custom_objects={"TFBertModel": TFBertModel, "KerasLayer": tf.keras.layers.Layer})
+vite_hibert_model = tf.keras.models.load_model(vite_hibert_path, custom_objects={'TFBertModel': TFBertModel, 'KerasLayer': tf.keras.layers.Layer})
 
 # Load models of VILLANOS dataset
 villanos_nb_path = os.path.join(models_folder, 'model','villanos_nb.pkl')
@@ -124,11 +126,13 @@ def predict_nb(text, vectorizer, cls_model):
     clean_text = [clean_text]
     input_text = vectorizer.transform(clean_text)
     prediction = cls_model.predict(input_text)
-    labels = ['non-violence', 'violence']
-    predicted = labels[np.argmax(prediction[0])]
-    print("prediction", prediction)
-    print("predicted", predicted)
-    return prediction[0].lower()
+    result = prediction[0].lower().strip()
+    print(result)
+    if result == 'violent':
+        result = 'violence'
+    elif result == 'nonviolent':
+        result = 'non-violence'
+    return result
 
 def predict_bilstm(text, w2v, cls_model):
     clean_text = preprocess_text(text)
@@ -140,7 +144,6 @@ def predict_bilstm(text, w2v, cls_model):
     prediction = cls_model.predict(input_text)
     labels = ['non-violence', 'violence']
     predicted = labels[np.argmax(prediction[0])]
-    print(prediction)
     return predicted
 
 def predict_hibert(text, tokenizer, cls_model):
@@ -152,8 +155,16 @@ def predict_hibert(text, tokenizer, cls_model):
     prediction = cls_model.predict({'input_ids': ids, 'attention_mask': masks})
     labels = ['non-violence', 'violence']
     predicted = labels[np.argmax(prediction[0])]
-    print(prediction)
     return predicted
+
+def translate_to_english(text):
+    detected_language = detect(text)
+    if detected_language == 'vi':
+        translator = Translator()
+        translated_text = translator.translate(text, dest='en')
+        return translated_text.text
+    else:
+        return text
 
 @app.route('/')
 def index():
@@ -164,17 +175,19 @@ def predict():
     if request.method == 'POST':
         text_to_predict = request.form['text_to_predict']
 
-        vite_nb = ""
-        vite_bilstm = ""
-        vite_hibert = ""
+        text_to_predict = translate_to_english(text_to_predict)
 
-        villanos_nb = ""
-        villanos_bilstm = ""
-        villanos_hibert = ""
+        vite_nb = ''
+        vite_bilstm = ''
+        vite_hibert = ''
 
-        combine_nb = ""
-        combine_bilstm = ""
-        combine_hibert = ""
+        villanos_nb = ''
+        villanos_bilstm = ''
+        villanos_hibert = ''
+
+        combine_nb = ''
+        combine_bilstm = ''
+        combine_hibert = ''
 
         vite_nb = predict_nb(text_to_predict, vite_vectorizer, vite_nb_model)
         vite_bilstm = predict_bilstm(text_to_predict, vite_w2v_model, vite_bilstm_model)
@@ -188,6 +201,24 @@ def predict():
         combine_bilstm = predict_bilstm(text_to_predict, combine_w2v_model, combine_bilstm_model)
         combine_hibert = predict_hibert(text_to_predict, hibert_tokenizer, combine_hibert_model)
 
+        values = [
+            vite_nb, vite_bilstm, vite_hibert,
+            villanos_nb, villanos_bilstm, villanos_hibert,
+            combine_nb, combine_bilstm, combine_hibert
+        ]
+
+        # Đếm số lượng 'violence' và 'non-violence'
+        violence_count = values.count('violence')
+        non_violence_count = values.count('non-violence')
+
+        final_result = ''
+
+        # Xác định giá trị của biến kq
+        if violence_count > non_violence_count:
+            final_result = 'violence'
+        else:
+            final_result = 'non-violence'
+
         return render_template('result.html',
                                text_to_predict = text_to_predict,
                                vite_nb = vite_nb,
@@ -200,12 +231,13 @@ def predict():
 
                                combine_nb = combine_nb,
                                combine_bilstm = combine_bilstm,
-                               combine_hibert = combine_hibert
+                               combine_hibert = combine_hibert,
+                               final_result = final_result
                                )
 
 @app.errorhandler(KeyError)
 def handle_key_error(e):
-    error_message = f"KeyError: {str(e)}"
+    error_message = f'KeyError: {str(e)}'
     return render_template('error.html', error_message=error_message)
 
 if __name__ == '__main__':

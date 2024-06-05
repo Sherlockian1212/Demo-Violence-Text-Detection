@@ -1,7 +1,7 @@
-# import keras
-# import tensorflow as tf
-# print(tf.__version__)
-# print(keras.__version__)
+import keras
+import tensorflow as tf
+print(tf.__version__)
+print(keras.__version__)
 from transformers import TFBertModel
 
 # # Đường dẫn đến thư mục lưu cache
