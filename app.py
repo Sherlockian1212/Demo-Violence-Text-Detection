@@ -35,13 +35,13 @@ app = Flask(__name__)
 
 models_folder = os.path.dirname(os.path.abspath(__file__))
 
-vite_w2v_model_path = os.path.join(models_folder, 'model','villanos_w2v.model')
+vite_w2v_model_path = os.path.join(models_folder, 'model','vite_w2v.model')
 vite_w2v_model = Word2Vec.load(vite_w2v_model_path)
 
 villanos_w2v_model_path = os.path.join(models_folder, 'model','villanos_w2v.model')
 villanos_w2v_model = Word2Vec.load(villanos_w2v_model_path)
 
-combine_w2v_model_path = os.path.join(models_folder, 'model','villanos_w2v.model')
+combine_w2v_model_path = os.path.join(models_folder, 'model','combine_w2v.model')
 combine_w2v_model = Word2Vec.load(combine_w2v_model_path)
 
 hibert_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
@@ -59,8 +59,8 @@ combine_vectorizer = joblib.load(combine_vectorizer_path)
 vite_nb_path = os.path.join(models_folder, 'model','vite_nb.pkl')
 vite_nb_model = joblib.load(vite_nb_path)
 
-# vite_bilstm_path = os.path.join(models_folder, 'model','vite_bilstm.pb')
-# vite_bilstm_model = load_model(vite_bilstm_path, compile=False)
+vite_bilstm_path = os.path.join(models_folder, 'model','vite_bilstm.h5')
+vite_bilstm_model = load_model(vite_bilstm_path, compile=False)
 
 vite_hibert_path = os.path.join(models_folder, 'model','vite_hibert.h5')
 vite_hibert_model = tf.keras.models.load_model(vite_hibert_path, custom_objects={"TFBertModel": TFBertModel, "KerasLayer": tf.keras.layers.Layer})
@@ -80,8 +80,8 @@ villanos_hibert_model = load_model(villanos_hibert_path)
 combine_nb_path = os.path.join(models_folder, 'model','combine_nb.pkl')
 combine_nb_model = joblib.load(combine_nb_path)
 
-# combine_bilstm_path = os.path.join(models_folder, 'model','combine_bilstm.pb')
-# combine_bilstm_model = load_model(combine_bilstm_path)
+combine_bilstm_path = os.path.join(models_folder, 'model','combine_bilstm.h5')
+combine_bilstm_model = load_model(combine_bilstm_path)
 
 combine_hibert_path = os.path.join(models_folder, 'model','combine_hibert.h5')
 combine_hibert_model = load_model(combine_hibert_path)
@@ -124,6 +124,10 @@ def predict_nb(text, vectorizer, cls_model):
     clean_text = [clean_text]
     input_text = vectorizer.transform(clean_text)
     prediction = cls_model.predict(input_text)
+    labels = ['non-violence', 'violence']
+    predicted = labels[np.argmax(prediction[0])]
+    print("prediction", prediction)
+    print("predicted", predicted)
     return prediction[0].lower()
 
 def predict_bilstm(text, w2v, cls_model):
@@ -136,6 +140,7 @@ def predict_bilstm(text, w2v, cls_model):
     prediction = cls_model.predict(input_text)
     labels = ['non-violence', 'violence']
     predicted = labels[np.argmax(prediction[0])]
+    print(prediction)
     return predicted
 
 def predict_hibert(text, tokenizer, cls_model):
@@ -147,6 +152,7 @@ def predict_hibert(text, tokenizer, cls_model):
     prediction = cls_model.predict({'input_ids': ids, 'attention_mask': masks})
     labels = ['non-violence', 'violence']
     predicted = labels[np.argmax(prediction[0])]
+    print(prediction)
     return predicted
 
 @app.route('/')
@@ -157,16 +163,29 @@ def index():
 def predict():
     if request.method == 'POST':
         text_to_predict = request.form['text_to_predict']
-        vite_nb = predict_nb(text_to_predict, vite_vectorizer, vite_nb_model),
-        vite_bilstm = "vite_bilstm",
-        vite_hibert = predict_hibert(text_to_predict, hibert_tokenizer,vite_hibert_model),
 
-        villanos_nb = predict_nb(text_to_predict, villanos_vectorizer, villanos_nb_model),
-        villanos_bilstm = predict_bilstm(text_to_predict, villanos_w2v_model, villanos_bilstm_model),
-        villanos_hibert = predict_hibert(text_to_predict, hibert_tokenizer, villanos_hibert_model),
+        vite_nb = ""
+        vite_bilstm = ""
+        vite_hibert = ""
 
-        combine_nb = predict_nb(text_to_predict, combine_vectorizer, combine_nb_model),
-        combine_bilstm = "combine_bilstm",
+        villanos_nb = ""
+        villanos_bilstm = ""
+        villanos_hibert = ""
+
+        combine_nb = ""
+        combine_bilstm = ""
+        combine_hibert = ""
+
+        vite_nb = predict_nb(text_to_predict, vite_vectorizer, vite_nb_model)
+        vite_bilstm = predict_bilstm(text_to_predict, vite_w2v_model, vite_bilstm_model)
+        vite_hibert = predict_hibert(text_to_predict, hibert_tokenizer,vite_hibert_model)
+
+        villanos_nb = predict_nb(text_to_predict, villanos_vectorizer, villanos_nb_model)
+        villanos_bilstm = predict_bilstm(text_to_predict, villanos_w2v_model, villanos_bilstm_model)
+        villanos_hibert = predict_hibert(text_to_predict, hibert_tokenizer, villanos_hibert_model)
+
+        combine_nb = predict_nb(text_to_predict, combine_vectorizer, combine_nb_model)
+        combine_bilstm = predict_bilstm(text_to_predict, combine_w2v_model, combine_bilstm_model)
         combine_hibert = predict_hibert(text_to_predict, hibert_tokenizer, combine_hibert_model)
 
         return render_template('result.html',
