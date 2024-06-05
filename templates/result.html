@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detecting Violent Writing Style - Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-size: cover;
+            background-position: center;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            position: relative;
+            background: linear-gradient(135deg, #f06, #4a90e2);
+            width: 100vw; /* Full width of viewport */
+            height: 100vh; /* Full height of viewport */
+            overflow: auto; /* Enable scrolling */;
+        }
+
+        header {
+            background-color: rgba(0, 0, 0, 0.8);
+            text-align: center;
+            width: 100%;
+            padding-top: 20px;
+  
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            color: #fff;
+            margin: 0;
+            font-size: 2em;
+            font-weight: 700;
+        }
+
+        .result-container {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            margin: 20px;
+            width: 80%;
+            max-width: 800px;
+            
+        }
+
+        .result{
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            margin: 10px;
+            width: 80%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: raw;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        h2 {
+            color: #007BFF;
+            margin-top: 20px;
+        }
+
+        p {
+            color: #333;
+            font-size: 1.25em;
+        }
+
+        button {
+            background-color: #002aff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 1.25em;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+            margin-top: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        button:hover {
+            background-color: #dc17a4;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Result</h1>
+    </header>
+    <div class="result-container">
+        <h2><strong>Input text:</strong> </h2>
+        <p>{{ text_to_predict }}</p>
+    </div>
+    <div class="result">
+        
+        <div>
+            <h2>Dataset: VITE</h2>
+            <p><strong>Naive Bayes:</strong> {{ vite_nb }}</p>
+            <p><strong>Bi-LSTM:</strong> {{ vite_bilstm }}</p>
+            <p><strong>Hierarchical BERT:</strong> {{ vite_hibert }}</p>
+        </div>
+        <div>
+            <h2>Dataset: VILLANOS</h2>
+            <p><strong>Naive Bayes:</strong> {{ villanos_nb }}</p>
+            <p><strong>Bi-LSTM:</strong> {{ villanos_bilstm }}</p>
+            <p><strong>Hierarchical BERT:</strong> {{ villanos_hibert }}</p>
+        </div>
+
+        <div>
+            <h2>Dataset: VITE+VILLANOS</h2>
+            <p><strong>Naive Bayes:</strong> {{ combine_nb }}</p>
+            <p><strong>Bi-LSTM:</strong> {{ combine_bilstm }}</p>
+            <p><strong>Hierarchical BERT:</strong> {{ combine_hibert }}</p>
+        </div>
+
+    </div>
+    <button onclick="goBack()">Go Back</button>
+
+    <script>
+        function goBack() {
+            window.history.back();
+        }
+    </script>
+</body>
+</html>
