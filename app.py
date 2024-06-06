@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify, url_for
 import os
 import keras
 import tensorflow as tf
@@ -23,6 +23,7 @@ nltk.download('wordnet')
 from nltk.tokenize import word_tokenize
 stop_words = set(stopwords.words('english'))
 from transformers import TFBertModel, PretrainedConfig
+import random
 
 from transformers import TFBertModel
 from langdetect import detect
@@ -87,8 +88,6 @@ combine_bilstm_model = load_model(combine_bilstm_path)
 
 combine_hibert_path = os.path.join(models_folder, 'model','combine_hibert.h5')
 combine_hibert_model = load_model(combine_hibert_path)
-
-
 
 punctuations=list(string.punctuation)
 
@@ -165,6 +164,20 @@ def translate_to_english(text):
         return translated_text.text
     else:
         return text
+    
+def get_random_image_path(directory):
+    try:
+        models_folder = os.path.dirname(os.path.abspath(__file__))
+        # Lấy danh sách các tệp tin trong thư mục
+        files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(models_folder, directory, f))]
+        if not files:
+            return None
+        # Chọn ngẫu nhiên một tệp tin
+        random_file = random.choice(files)
+        return os.path.join(directory, random_file)
+
+    except Exception as e:
+        return str(e)
 
 @app.route('/')
 def index():
@@ -177,18 +190,18 @@ def predict():
 
         text_to_predict = translate_to_english(text_to_predict)
 
-        vite_nb = ''
-        vite_bilstm = ''
-        vite_hibert = ''
+        vite_nb = 'non-violence'
+        vite_bilstm = 'non-violence'
+        vite_hibert = 'non-violence'
 
-        villanos_nb = ''
-        villanos_bilstm = ''
-        villanos_hibert = ''
+        villanos_nb = 'non-violence'
+        villanos_bilstm = 'non-violence'
+        villanos_hibert = 'non-violence'
 
-        combine_nb = ''
-        combine_bilstm = ''
-        combine_hibert = ''
-
+        combine_nb = 'non-violence'
+        combine_bilstm = 'non-violence'
+        combine_hibert = 'non-violence'
+        
         vite_nb = predict_nb(text_to_predict, vite_vectorizer, vite_nb_model)
         vite_bilstm = predict_bilstm(text_to_predict, vite_w2v_model, vite_bilstm_model)
         vite_hibert = predict_hibert(text_to_predict, hibert_tokenizer,vite_hibert_model)
@@ -200,7 +213,7 @@ def predict():
         combine_nb = predict_nb(text_to_predict, combine_vectorizer, combine_nb_model)
         combine_bilstm = predict_bilstm(text_to_predict, combine_w2v_model, combine_bilstm_model)
         combine_hibert = predict_hibert(text_to_predict, hibert_tokenizer, combine_hibert_model)
-
+        
         values = [
             vite_nb, vite_bilstm, vite_hibert,
             villanos_nb, villanos_bilstm, villanos_hibert,
@@ -212,12 +225,15 @@ def predict():
         non_violence_count = values.count('non-violence')
 
         final_result = ''
-
+        path = ''
         # Xác định giá trị của biến kq
         if violence_count > non_violence_count:
             final_result = 'violence'
+            path = get_random_image_path(os.path.join('static','violence'))
         else:
             final_result = 'non-violence'
+            path = get_random_image_path(os.path.join('static','non-violence'))
+        print(path)
 
         return render_template('result.html',
                                text_to_predict = text_to_predict,
@@ -232,7 +248,8 @@ def predict():
                                combine_nb = combine_nb,
                                combine_bilstm = combine_bilstm,
                                combine_hibert = combine_hibert,
-                               final_result = final_result
+                               final_result = final_result,
+                               path = path
                                )
 
 @app.errorhandler(KeyError)

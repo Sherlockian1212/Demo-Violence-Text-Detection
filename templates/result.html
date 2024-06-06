@@ -17,10 +17,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             min-height: 100vh;
             position: relative;
-            background: linear-gradient(135deg, #f06, #4a90e2);
+            background-image: linear-gradient(to right, #f06, #4a90e2);
             width: 100vw; /* Full width of viewport */
             height: 100vh; /* Full height of viewport */
             overflow: auto; /* Enable scrolling */;
@@ -93,13 +92,39 @@
         }
 
         button:hover {
-            background-color: #dc17a4;
+            background-color: #175fdc;
             transform: translateY(-2px);
         }
 
         button:active {
             transform: translateY(0);
         }
+        
+        .final_result{
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            margin: 10px;
+            max-width: 600px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .final_result img {
+            height: 500px;
+            width: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+        }
+
+        .final_result img:hover {
+            transform: scale(1.05);
+        }
+
     </style>
 </head>
 <body>
@@ -133,8 +158,13 @@
         </div>
 
     </div>
-    <div class="result">
+    <div class="final_result">
         <h2> {{ final_result }}</h2>
+        {% if path %}
+            <img src="{{path}}" alt="Image">
+        {% else %}
+            <p>No image available</p>
+        {% endif %}
     </div>
     <button onclick="goBack()">Go Back</button>
 
